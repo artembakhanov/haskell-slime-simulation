@@ -103,6 +103,13 @@ packages:
   original:
     hackage: accelerate-llvm-1.3.0.0
 - completed:
+    hackage: accelerate-llvm-ptx-1.3.0.0@sha256:532f7811702fe6909841cd9f172f5ae5733d85361e42d8d3122fb973ad772250,6677
+    pantry-tree:
+      size: 4378
+      sha256: d514c9bc379c9a73e5542f8b137b223ac8a7590e9d5e719af19541d05c886856
+  original:
+    hackage: accelerate-llvm-ptx-1.3.0.0
+- completed:
     hackage: cuda-0.10.2.0@sha256:29912a2273840bbad934b404c7bd27633a1b9b5449c57ae8118bc35e7dcfeb74,5656
     pantry-tree:
       size: 3857

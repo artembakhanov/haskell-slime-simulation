@@ -10,8 +10,8 @@ import Data.Array.Accelerate.Data.Complex                 as A
 import Data.Array.Accelerate.Data.Colour.RGB              as A
 import Data.Array.Accelerate.Data.Colour.Names            as A
 
-import Data.Array.Accelerate.LLVM.Native                  as CPU
--- import Data.Array.Accelerate.LLVM.PTX                     as PTX
+-- import Data.Array.Accelerate.LLVM.Native                  as CPU
+import Data.Array.Accelerate.LLVM.PTX                     as PTX
 
 import qualified Prelude                                  as P
 

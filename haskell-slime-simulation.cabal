@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cec044faeba12cf23d0c3eed1f0108446a596de41ee11e3478a7a1774a91ed0f
+-- hash: 2e126d8f7d7e0d9f439f732994cb4b9d49394cf91d128bf7976e821d30c9ea8b
 
 name:           haskell-slime-simulation
 version:        0.1.0.0
@@ -36,6 +36,7 @@ library
       accelerate
     , accelerate-io-bmp
     , accelerate-llvm-native
+    , accelerate-llvm-ptx
     , base >=4.7 && <5
     , colour-accelerate
     , cuda
@@ -52,6 +53,7 @@ executable haskell-slime-simulation-exe
       accelerate
     , accelerate-io-bmp
     , accelerate-llvm-native
+    , accelerate-llvm-ptx
     , base >=4.7 && <5
     , colour-accelerate
     , cuda
@@ -70,6 +72,7 @@ test-suite haskell-slime-simulation-test
       accelerate
     , accelerate-io-bmp
     , accelerate-llvm-native
+    , accelerate-llvm-ptx
     , base >=4.7 && <5
     , colour-accelerate
     , cuda

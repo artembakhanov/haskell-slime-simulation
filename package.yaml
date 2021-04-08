@@ -27,7 +27,7 @@ dependencies:
 - accelerate-io-bmp
 - accelerate-llvm-native
 - cuda
-# - accelerate-llvm-ptx
+- accelerate-llvm-ptx
 
 library:
   source-dirs: src
