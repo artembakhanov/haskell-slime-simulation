@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2e126d8f7d7e0d9f439f732994cb4b9d49394cf91d128bf7976e821d30c9ea8b
+-- hash: e82b6ecfa3d6df7c524e70c06dc4e33b5ef536636a339050dd20e7a516768651
 
 name:           haskell-slime-simulation
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      Agent
       Lib
   other-modules:
       Paths_haskell_slime_simulation
@@ -36,10 +37,8 @@ library
       accelerate
     , accelerate-io-bmp
     , accelerate-llvm-native
-    , accelerate-llvm-ptx
     , base >=4.7 && <5
     , colour-accelerate
-    , cuda
   default-language: Haskell2010
 
 executable haskell-slime-simulation-exe
@@ -53,10 +52,8 @@ executable haskell-slime-simulation-exe
       accelerate
     , accelerate-io-bmp
     , accelerate-llvm-native
-    , accelerate-llvm-ptx
     , base >=4.7 && <5
     , colour-accelerate
-    , cuda
     , haskell-slime-simulation
   default-language: Haskell2010
 
@@ -72,9 +69,7 @@ test-suite haskell-slime-simulation-test
       accelerate
     , accelerate-io-bmp
     , accelerate-llvm-native
-    , accelerate-llvm-ptx
     , base >=4.7 && <5
     , colour-accelerate
-    , cuda
     , haskell-slime-simulation
   default-language: Haskell2010

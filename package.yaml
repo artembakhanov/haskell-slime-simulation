@@ -26,8 +26,8 @@ dependencies:
 - colour-accelerate
 - accelerate-io-bmp
 - accelerate-llvm-native
-- cuda
-- accelerate-llvm-ptx
+# - cuda
+# - accelerate-llvm-ptx
 
 library:
   source-dirs: src
