@@ -6,6 +6,25 @@ import Data.Array.Accelerate.System.Random.MWC
 import System.IO.Unsafe
 
 type Agent = ((Int, Int), Float)
+type Stencil5x1 a = (Stencil3 a, Stencil5 a, Stencil3 a)
+type Stencil1x5 a = (Stencil3 a, Stencil3 a, Stencil3 a, Stencil3 a, Stencil3 a)
+
+convolve5x1 :: [Exp Float] -> Stencil5x1 Float -> Exp Float
+convolve5x1 kernel (_, (a,b,c,d,e), _)
+  = P.sum $ P.zipWith (*) kernel [a,b,c,d,e]
+
+convolve1x5 :: [Exp Float] -> Stencil1x5 Float -> Exp Float
+convolve1x5 kernel ((_,a,_), (_,b,_), (_,c,_), (_,d,_), (_,e,_))
+  = P.sum $ P.zipWith (*) kernel [a,b,c,d,e]
+
+
+-- gaussian = [constant (0.06136),constant 0.24477, constant 0.38774, constant 0.24477, constant 0.06136]
+gaussian = [0.7, 0.8, 0.9, 0.8, 0.7]
+
+blur :: Acc (Matrix Float) -> Acc (Matrix Float)
+blur = stencil (convolve5x1 gaussian) clamp
+     . stencil (convolve1x5 gaussian) clamp
+
 
 fromAgentToShape :: Exp Agent -> Exp ((:.) ((:.) Z Int) Int)
 fromAgentToShape agent = I2 (fst (fst agent)) (snd (fst agent))
@@ -24,18 +43,10 @@ initAgents :: Int -> (Int, Int) -> P.IO(Acc (Vector Agent))
 initAgents n (width, height) = do
     x_ <- randomArray (uniformR (0, width))   (Z :. n)           :: P.IO (Vector Int)
     y_ <- randomArray (uniformR (0, height))  (Z :. n)           :: P.IO (Vector Int)
-    f_ <- randomArray (uniformR (0, pi*2))    (Z :. n)           :: P.IO (Vector Float)
+    f_ <- randomArray (uniformR (0, 2 * pi))    (Z :. n)           :: P.IO (Vector Float)
 
     P.return ( zip (zip (use x_) (use y_)) (use f_))
-        -- a  = P.fromIntegral (n `P.mod` 100)
-        -- x_ = P.floor (a P./ 100 P.* P.fromIntegral (width))
-        -- y_ = P.floor (a P./ 100 P.* P.fromIntegral (height))
--- initAgents 0 (width, height) = []
--- initAgents n (width, height) = ((x_, y_), 0) : initAgents (n - 1) (width, height)
---     where
---         a  = P.fromIntegral (n `P.mod` 100)
---          x_ = P.floor (a P./ 100 P.* P.fromIntegral (width))
---         y_ = P.floor (a P./ 100 P.* P.fromIntegral (height))
+
 
 moveAgents :: (Exp Int, Exp Int) -> Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
 moveAgents (width, height) agents = map f agents
@@ -53,12 +64,14 @@ moveAgents (width, height) agents = map f agents
 initTrailMap :: (Int, Int) -> Acc (Array DIM2 Float)
 initTrailMap (width, height) = fill (constant (Z:.width:.height)) 0.0
 
+
 updateTrailMap :: Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent) -> Acc (Array DIM2 Float)
 updateTrailMap prev agents = new
     where
         ones = fill (I1 (size agents)) 1.0
         prev_ = map ((-) 1) (prev)
-        new = permute (+) prev_ (\ix -> Just_ (fromAgentToShape (agents!ix))) ones
+        blurred_prev = blur prev_
+        new = permute (+) blurred_prev (\ix -> Just_ (fromAgentToShape (agents!ix))) ones
 
 updateAngles :: (Exp Int, Exp Int) -> Acc (Array DIM1 Agent) -> Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent)
 updateAngles (width, height) agents trailMap = map f agents
@@ -82,4 +95,4 @@ updateAngles (width, height) agents trailMap = map f agents
         v_ = ifThenElse (t0 < t1) (ifThenElse (t1 < t2) (v + rotation) (v - rotation)) (ifThenElse (t0 > t2) (v) (v + rotation))
 
 
-        rotation = 30 / pi -- pi / 30
+        rotation = pi / 6

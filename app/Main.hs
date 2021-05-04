@@ -19,13 +19,14 @@ chelikiToColor :: (A.Exp Float) -> A.Exp A.Colour
 chelikiToColor el =
   A.rgb r g b
     where
-      r = el
-      g = el
-      b = el
+      r = el / 5.0
+      g = el / 5.0
+      b = el / 5.0
 
 loop :: Int -> (Int, Int) -> Acc (A.Array A.DIM1 Agent) -> Acc (A.Array A.DIM2 Float) -> IO()
 loop 0 (_, _) _ _ = do print "Done!"
 loop n (width, height) a trail = do
+  print ("image " ++ (show n))
   let
     cheliki = fromAgentsToMatrix (width, height) a
 
@@ -43,4 +44,4 @@ main = do
     height  = 600
     trailMap = initTrailMap (width, height)
   a <- initAgents 5000 (width, height)
-  loop 50 (width, height) a trailMap
+  loop 240 (width, height) a trailMap
