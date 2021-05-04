@@ -19,7 +19,8 @@ convolve1x5 kernel ((_,a,_), (_,b,_), (_,c,_), (_,d,_), (_,e,_))
 
 
 -- gaussian = [constant (0.06136),constant 0.24477, constant 0.38774, constant 0.24477, constant 0.06136]
-gaussian = [0.7, 0.8, 0.9, 0.8, 0.7]
+gaussian :: [Exp Float]
+gaussian = [constant 0.7, constant 0.8, constant 0.9, constant 0.8, constant 0.7]
 
 blur :: Acc (Matrix Float) -> Acc (Matrix Float)
 blur = stencil (convolve5x1 gaussian) clamp
@@ -58,8 +59,8 @@ moveAgents (width, height) agents = map f agents
         v :: Exp (Float)
         v =  (snd agent)
         x_, y_ :: Exp (Int)
-        x_ = (x + floor (7.0 * cos v)) `mod` width
-        y_ = (y + floor (7.0 * sin v)) `mod` height
+        x_ = (x + floor (2.5 * cos v)) `mod` width
+        y_ = (y + floor (2.5 * sin v)) `mod` height
 
 initTrailMap :: (Int, Int) -> Acc (Array DIM2 Float)
 initTrailMap (width, height) = fill (constant (Z:.width:.height)) 0.0
@@ -69,7 +70,7 @@ updateTrailMap :: Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent) -> Acc (Array
 updateTrailMap prev agents = new
     where
         ones = fill (I1 (size agents)) 1.0
-        prev_ = map ((-) 1) (prev)
+        prev_ = map ((*) (0.25 * 0.03)) (prev)
         blurred_prev = blur prev_
         new = permute (+) blurred_prev (\ix -> Just_ (fromAgentToShape (agents!ix))) ones
 
@@ -78,7 +79,7 @@ updateAngles (width, height) agents trailMap = map f agents
   where
     f agent = T2 (T2 x y) v_
       where
-        dist = 10.0
+        dist = 4.0
         x, y :: Exp (Int)
         v, v_ :: Exp (Float)
         x =  (fst (fst agent))

@@ -19,9 +19,9 @@ chelikiToColor :: (A.Exp Float) -> A.Exp A.Colour
 chelikiToColor el =
   A.rgb r g b
     where
-      r = el / 5.0
-      g = el / 5.0
-      b = el / 5.0
+      r = el / 20.0 * 49.0 / 255.0
+      g = el / 20.0 * 188.0 / 255.0
+      b = el / 20.0 * 239.0 / 255.0 
 
 loop :: Int -> (Int, Int) -> Acc (A.Array A.DIM1 Agent) -> Acc (A.Array A.DIM2 Float) -> IO()
 loop 0 (_, _) _ _ = do print "Done!"
@@ -31,8 +31,8 @@ loop n (width, height) a trail = do
     cheliki = fromAgentsToMatrix (width, height) a
 
     movedCheliki = moveAgents ((A.constant width), (A.constant height)) a
-    rotatedCheliki = updateAngles ((A.constant width), (A.constant height)) movedCheliki trail
-    newTrailMap = updateTrailMap trail rotatedCheliki
+    rotatedCheliki = A.use (run (updateAngles ((A.constant width), (A.constant height)) movedCheliki trail))
+    newTrailMap = A.use (run (updateTrailMap trail rotatedCheliki))
     imgCheliki = A.map A.packRGB $ A.map chelikiToColor $ cheliki
   A.writeImageToBMP ("test" P.++ (show n) P.++ ".bmp") (run imgCheliki)
   loop (n - 1) (width, height) rotatedCheliki newTrailMap
@@ -43,5 +43,5 @@ main = do
     width = 600
     height  = 600
     trailMap = initTrailMap (width, height)
-  a <- initAgents 5000 (width, height)
-  loop 240 (width, height) a trailMap
+  a <- initAgents 300000 (width, height)
+  loop 600 (width, height) a trailMap
