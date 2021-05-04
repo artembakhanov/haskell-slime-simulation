@@ -27,7 +27,6 @@ initAgents n (width, height) = do
     f_ <- randomArray (uniformR (0, pi*2))    (Z :. n)           :: P.IO (Vector Float)
 
     P.return ( zip (zip (use x_) (use y_)) (use f_))
-
         -- a  = P.fromIntegral (n `P.mod` 100)
         -- x_ = P.floor (a P./ 100 P.* P.fromIntegral (width))
         -- y_ = P.floor (a P./ 100 P.* P.fromIntegral (height))
@@ -37,3 +36,17 @@ initAgents n (width, height) = do
 --         a  = P.fromIntegral (n `P.mod` 100)
 --          x_ = P.floor (a P./ 100 P.* P.fromIntegral (width))
 --         y_ = P.floor (a P./ 100 P.* P.fromIntegral (height))
+
+moveAgents :: Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
+moveAgents agents = map f agents
+  where
+    f agent = T2 (T2 x_ y_) v
+      where
+        x =  (fst (fst agent))
+        y =  (snd (fst agent))
+        v :: Exp (Float)
+        v =  (snd agent)
+        x_, y_ :: Exp (Int)
+        x_ = x + 15 * floor (cos v)
+        y_ = y + 15 * floor (sin v)
+
