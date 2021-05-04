@@ -37,8 +37,8 @@ initAgents n (width, height) = do
 --          x_ = P.floor (a P./ 100 P.* P.fromIntegral (width))
 --         y_ = P.floor (a P./ 100 P.* P.fromIntegral (height))
 
-moveAgents :: Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
-moveAgents agents = map f agents
+moveAgents :: (Exp Int, Exp Int) -> Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
+moveAgents (width, height) agents = map f agents
   where
     f agent = T2 (T2 x_ y_) v
       where
@@ -47,6 +47,39 @@ moveAgents agents = map f agents
         v :: Exp (Float)
         v =  (snd agent)
         x_, y_ :: Exp (Int)
-        x_ = x + 15 * floor (cos v)
-        y_ = y + 15 * floor (sin v)
+        x_ = (x + floor (7.0 * cos v)) `mod` width
+        y_ = (y + floor (7.0 * sin v)) `mod` height
 
+initTrailMap :: (Int, Int) -> Acc (Array DIM2 Float)
+initTrailMap (width, height) = fill (constant (Z:.width:.height)) 0.0
+
+updateTrailMap :: Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent) -> Acc (Array DIM2 Float)
+updateTrailMap prev agents = new
+    where
+        ones = fill (I1 (size agents)) 1.0
+        prev_ = map ((-) 1) (prev)
+        new = permute (+) prev_ (\ix -> Just_ (fromAgentToShape (agents!ix))) ones
+
+updateAngles :: (Exp Int, Exp Int) -> Acc (Array DIM1 Agent) -> Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent)
+updateAngles (width, height) agents trailMap = map f agents
+  where
+    f agent = T2 (T2 x y) v_
+      where
+        dist = 10.0
+        x, y :: Exp (Int)
+        v, v_ :: Exp (Float)
+        x =  (fst (fst agent))
+        y =  (snd (fst agent))
+        v = snd agent
+
+        diffX, diffY :: Exp (Int) -> Exp (Float) -> Exp(Int)
+        diffX x v = (x + floor (dist * cos (v))) `mod` width
+        diffY y v = (y + floor (dist * sin (v))) `mod` height
+--        t0, t1, t2 :: Exp(Float)
+        t0 = trailMap ! index2 (diffX x v)  (diffY y v)
+        t1 = trailMap ! index2 (diffX x (v - rotation)) (diffY y (v - rotation))
+        t2 = trailMap ! index2 (diffX x (v + rotation)) (diffY y (v + rotation))
+        v_ = ifThenElse (t0 < t1) (ifThenElse (t1 < t2) (v + rotation) (v - rotation)) (ifThenElse (t0 > t2) (v) (v + rotation))
+
+
+        rotation = 30 / pi -- pi / 30
