@@ -2,7 +2,7 @@ module Agent where
 
 import Data.Array.Accelerate                              as A
 import qualified Prelude                                  as P
-import Data.Array.Accelerate.System.Random.MWC 
+import Data.Array.Accelerate.System.Random.MWC
 import System.IO.Unsafe
 
 type Agent = ((Int, Int), Float)
@@ -20,15 +20,14 @@ fromAgentsToMatrix (width, height) agents =
 
 -- initAgentsElt n (width, height) = fromList (Z:.n) (initAgents n (width, height))
 -- 
-initAgents :: Int -> (Int, Int) -> Acc (Vector Agent)
-initAgents n (width, height) = zip (zip x_ y_) f_
-    where
-        x_ = use (unsafePerformIO x_')
-        y_ = use (unsafePerformIO y_')
-        f_ = use (unsafePerformIO f_')
-        x_' = randomArray (uniformR (0, width))  (Z :. n)          :: P.IO (Vector Int)
-        y_' = randomArray (uniformR (0, height))  (Z :. n)         :: P.IO (Vector Int)
-        f_' = randomArray (uniformR (0, pi*2))  (Z :. n)           :: P.IO (Vector Float)
+initAgents :: Int -> (Int, Int) -> P.IO(Acc (Vector Agent))
+initAgents n (width, height) = do
+    x_ <- randomArray (uniformR (0, width))   (Z :. n)           :: P.IO (Vector Int)
+    y_ <- randomArray (uniformR (0, height))  (Z :. n)           :: P.IO (Vector Int)
+    f_ <- randomArray (uniformR (0, pi*2))    (Z :. n)           :: P.IO (Vector Float)
+
+    P.return ( zip (zip (use x_) (use y_)) (use f_))
+
         -- a  = P.fromIntegral (n `P.mod` 100)
         -- x_ = P.floor (a P./ 100 P.* P.fromIntegral (width))
         -- y_ = P.floor (a P./ 100 P.* P.fromIntegral (height))
