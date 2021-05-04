@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e82b6ecfa3d6df7c524e70c06dc4e33b5ef536636a339050dd20e7a516768651
+-- hash: 82d3bf89fd737aac3a2f183115dd79f6f4f4bbcbed3bcf30d78b73fffbe1281e
 
 name:           haskell-slime-simulation
 version:        0.1.0.0
@@ -39,6 +39,7 @@ library
     , accelerate-llvm-native
     , base >=4.7 && <5
     , colour-accelerate
+    , mwc-random-accelerate
   default-language: Haskell2010
 
 executable haskell-slime-simulation-exe
@@ -55,6 +56,7 @@ executable haskell-slime-simulation-exe
     , base >=4.7 && <5
     , colour-accelerate
     , haskell-slime-simulation
+    , mwc-random-accelerate
   default-language: Haskell2010
 
 test-suite haskell-slime-simulation-test
@@ -72,4 +74,5 @@ test-suite haskell-slime-simulation-test
     , base >=4.7 && <5
     , colour-accelerate
     , haskell-slime-simulation
+    , mwc-random-accelerate
   default-language: Haskell2010

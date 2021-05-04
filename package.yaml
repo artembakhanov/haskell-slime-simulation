@@ -26,6 +26,7 @@ dependencies:
 - colour-accelerate
 - accelerate-io-bmp
 - accelerate-llvm-native
+- mwc-random-accelerate
 # - cuda
 # - accelerate-llvm-ptx
 
