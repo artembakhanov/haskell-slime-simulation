@@ -50,17 +50,17 @@ initAgents n (width, height) = do
 
 
 moveAgents :: (Exp Int, Exp Int) -> Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
-moveAgents (width, height) agents = map f agents
+moveAgents (width, height) = map f
   where
     f agent = T2 (T2 x_ y_) v
       where
-        x =  (fst (fst agent))
-        y =  (snd (fst agent))
-        v :: Exp (Float)
-        v =  (snd agent)
-        x_, y_ :: Exp (Int)
+        x =  fst (fst agent)
+        y =  snd (fst agent)
+        v =  snd agent
         x_ = (x + floor (2.5 * cos v)) `mod` width
         y_ = (y + floor (2.5 * sin v)) `mod` height
+        v :: Exp Float
+        x_, y_ :: Exp Int
 
 initTrailMap :: (Int, Int) -> Acc (Array DIM2 Float)
 initTrailMap (width, height) = fill (constant (Z:.width:.height)) 0.0
@@ -70,7 +70,7 @@ updateTrailMap :: Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent) -> Acc (Array
 updateTrailMap prev agents = new
     where
         ones = fill (I1 (size agents)) 1.0
-        prev_ = map ((*) (0.25 * 0.03)) (prev)
+        prev_ = map ((0.25 * 0.03) *) prev
         blurred_prev = blur prev_
         new = permute (+) blurred_prev (\ix -> Just_ (fromAgentToShape (agents!ix))) ones
 
@@ -80,15 +80,15 @@ updateAngles (width, height) agents trailMap = map f agents
     f agent = T2 (T2 x y) v_
       where
         dist = 4.0
-        x, y :: Exp (Int)
-        v, v_ :: Exp (Float)
-        x =  (fst (fst agent))
-        y =  (snd (fst agent))
+        x, y :: Exp Int
+        v, v_ :: Exp Float
+        x =  fst (fst agent)
+        y =  snd (fst agent)
         v = snd agent
 
-        diffX, diffY :: Exp (Int) -> Exp (Float) -> Exp(Int)
-        diffX x v = (x + floor (dist * cos (v))) `mod` width
-        diffY y v = (y + floor (dist * sin (v))) `mod` height
+        diffX, diffY :: Exp Int -> Exp Float -> Exp Int
+        diffX x v = (x + floor (dist * cos v)) `mod` width
+        diffY y v = (y + floor (dist * sin v)) `mod` height
 --        t0, t1, t2 :: Exp(Float)
         t0 = trailMap ! index2 (diffX x v)  (diffY y v)
         t1 = trailMap ! index2 (diffX x (v - rotation)) (diffY y (v - rotation))

@@ -27,6 +27,7 @@ dependencies:
 - accelerate-io-bmp
 - accelerate-llvm-native
 - mwc-random-accelerate
+- gloss-accelerate
 # - cuda
 # - accelerate-llvm-ptx
 
@@ -42,6 +43,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - gloss
     - haskell-slime-simulation
 
 tests:
