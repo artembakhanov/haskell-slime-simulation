@@ -17,6 +17,7 @@ import Graphics.Gloss (Picture, blank, scale)
 import Graphics.Gloss.Data.Color (black)
 import Prelude ((==))
 import Prelude                                            as P
+import Graphics.Gloss.Accelerate.Data.Picture (bitmapOfArray)
 
 chelikiToColor :: A.Exp Float -> A.Exp A.Colour
 chelikiToColor el =
@@ -26,25 +27,41 @@ chelikiToColor el =
       g = el / 20.0 * 188.0 / 255.0
       b = el / 20.0 * 239.0 / 255.0
 
-loop :: Int -> (Int, Int) -> Acc (A.Array A.DIM1 Agent) -> Acc (A.Array A.DIM2 Float) -> IO()
-loop 0 (_, _) _ _ = do print "Done!"
-loop n (width, height) a trail = do
-  print ("image " ++ show n)
-  let
+render :: (Int, Int) -> Acc (A.Array A.DIM1 Agent) -> Acc (A.Array A.DIM2 Float) -> Picture
+render (width, height) a trail = --do
+  scale 1 1 (bitmapOfArray (run imgCheliki) False)
+    where
     cheliki = fromAgentsToMatrix (width, height) a
-
     movedCheliki = moveAgents (A.constant width, A.constant height) a
     rotatedCheliki = A.use (run (updateAngles (A.constant width, A.constant height) movedCheliki trail))
     newTrailMap = A.use (run (updateTrailMap trail rotatedCheliki))
     imgCheliki = A.map A.packRGB $ A.map chelikiToColor $ cheliki
-  A.writeImageToBMP ("test" P.++ show n P.++ ".bmp") (run imgCheliki)
-  loop (n - 1) (width, height) rotatedCheliki newTrailMap
+
+update :: (Int, Int) -> Acc (A.Array A.DIM1 Agent) -> Acc (A.Array A.DIM2 Float)
+  -> (Acc (A.Vector Agent), Acc (A.Array A.DIM2 Float))
+update (width, height) a trail = ( rotatedCheliki, newTrailMap)
+    where
+    cheliki = fromAgentsToMatrix (width, height) a
+    movedCheliki = moveAgents (A.constant width, A.constant height) a
+    rotatedCheliki = A.use (run (updateAngles (A.constant width, A.constant height) movedCheliki trail))
+    newTrailMap = A.use (run (updateTrailMap trail rotatedCheliki))
+
 
 main :: IO ()
 main = do
   let
-    width = 1440
-    height  = 2560
+    width    = 800
+    height   = 600
+    fps      = 5
     trailMap = initTrailMap (width, height)
-  a <- initAgents 1000000 (width, height)
-  loop 200 (width, height) a trailMap
+    rndr     = uncurry (render (width, height))
+    biba     = uncurry (update (width, height))
+  world <- initAgents 2000000 (width, height)
+  GL.simulate
+      (GL.InWindow "Cheliki" (width, height) (10, 20))
+      black
+      fps
+      (world, trailMap)
+      rndr --(return (render (width, height) world trailMap))
+      (\_ _dt -> biba)
+  -- loop 200 (width, height) world trailMap
