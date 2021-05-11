@@ -27,22 +27,23 @@ chelikiToColor el =
       g = el / 20.0 * 188.0 / 255.0
       b = el / 20.0 * 239.0 / 255.0
 
-render :: (Int, Int) -> Acc (A.Array A.DIM1 Agent) -> Acc (A.Array A.DIM2 Float) -> Picture
+render :: (Int, Int) -> Acc (A.Array A.DIM1 Agent) -> Acc (A.Array A.DIM2 Float)
+   -> Picture
 render (width, height) a trail = --do
   scale 1 1 (bitmapOfArray (run imgCheliki) False)
     where
     cheliki = fromAgentsToMatrix (width, height) a
-    movedCheliki = moveAgents (A.constant width, A.constant height) a
-    rotatedCheliki = A.use (run (updateAngles (A.constant width, A.constant height) movedCheliki trail))
-    newTrailMap = A.use (run (updateTrailMap trail rotatedCheliki))
+    -- movedCheliki = moveAgents (A.constant width, A.constant height) a
+    -- rotatedCheliki = A.use (run (updateAngles (A.constant width, A.constant height) movedCheliki trail))
+    -- newTrailMap = A.use (run (updateTrailMap trail rotatedCheliki))
     imgCheliki = A.map A.packRGB $ A.map chelikiToColor $ cheliki
 
-update :: (Int, Int) -> Acc (A.Array A.DIM1 Agent) -> Acc (A.Array A.DIM2 Float)
-  -> (Acc (A.Vector Agent), Acc (A.Array A.DIM2 Float))
-update (width, height) a trail = ( rotatedCheliki, newTrailMap)
+update :: (Int, Int) -> Acc (A.Array A.DIM1 Agent) -> Acc (A.Array A.DIM2 Float) -> Float
+  -> (Acc (A.Vector Agent), Acc (A.Array A.DIM2 Float), Float)
+update (width, height) a trail dt = ( rotatedCheliki, newTrailMap, dt + 0.001)
     where
     cheliki = fromAgentsToMatrix (width, height) a
-    movedCheliki = moveAgents (A.constant width, A.constant height) a
+    movedCheliki = moveAgents (A.constant width, A.constant height, A.constant dt) a
     rotatedCheliki = A.use (run (updateAngles (A.constant width, A.constant height) movedCheliki trail))
     newTrailMap = A.use (run (updateTrailMap trail rotatedCheliki))
 
@@ -50,18 +51,18 @@ update (width, height) a trail = ( rotatedCheliki, newTrailMap)
 main :: IO ()
 main = do
   let
-    width    = 800
-    height   = 600
-    fps      = 5
+    width    = 1080 `div` 2
+    height   = 1920 `div` 2
+    fps      = 15
     trailMap = initTrailMap (width, height)
-    rndr     = uncurry (render (width, height))
-    biba     = uncurry (update (width, height))
-  world <- initAgents 2000000 (width, height)
+    rndr     = \ (x,y,_) -> render (width, height) x y
+    update'  = \ (x,y,z) -> update (width, height) x y z
+  world <- initAgents 1000000 (width, height)
   GL.simulate
-      (GL.InWindow "Cheliki" (width, height) (10, 20))
+      (GL.InWindow "Cheliki" (height, width) (10, 20))
       black
       fps
-      (world, trailMap)
+      (world, trailMap, 0.1)
       rndr --(return (render (width, height) world trailMap))
-      (\_ _dt -> biba)
+      (\_ _dt -> update')
   -- loop 200 (width, height) world trailMap

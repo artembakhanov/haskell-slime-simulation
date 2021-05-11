@@ -3,6 +3,7 @@ module Agent where
 import Data.Array.Accelerate                              as A
 import qualified Prelude                                  as P
 import Data.Array.Accelerate.System.Random.MWC
+import Data.Array.Accelerate.Data.Bits                    as B
 import System.IO.Unsafe
 
 type Agent = ((Int, Int), Float)
@@ -20,7 +21,7 @@ convolve1x5 kernel ((_,a,_), (_,b,_), (_,c,_), (_,d,_), (_,e,_))
 
 -- gaussian = [constant (0.06136),constant 0.24477, constant 0.38774, constant 0.24477, constant 0.06136]
 gaussian :: [Exp Float]
-gaussian = [constant 0.7, constant 0.8, constant 0.9, constant 0.8, constant 0.7]
+gaussian = [constant 0.4, constant 0.6, constant 0.9, constant 0.6, constant 0.4]
 
 blur :: Acc (Matrix Float) -> Acc (Matrix Float)
 blur = stencil (convolve5x1 gaussian) clamp
@@ -44,22 +45,40 @@ initAgents :: Int -> (Int, Int) -> P.IO(Acc (Vector Agent))
 initAgents n (width, height) = do
     x_ <- randomArray (uniformR (0, width))   (Z :. n)           :: P.IO (Vector Int)
     y_ <- randomArray (uniformR (0, height))  (Z :. n)           :: P.IO (Vector Int)
-    f_ <- randomArray (uniformR (0, 2 * pi))    (Z :. n)           :: P.IO (Vector Float)
+    f_ <- randomArray (uniformR (0, 2 * pi))    (Z :. n)         :: P.IO (Vector Float)
 
     P.return ( zip (zip (use x_) (use y_)) (use f_))
 
 
-moveAgents :: (Exp Int, Exp Int) -> Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
-moveAgents (width, height) = map f
+moveAgents :: (Exp Int, Exp Int, Exp Float) -> Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
+moveAgents (width, height, dt) = map f
   where
-    f agent = T2 (T2 x_ y_) v
+    f agent = T2 (T2 x_ y_) v'
       where
-        x =  fst (fst agent)
-        y =  snd (fst agent)
-        v =  snd agent
-        x_ = (x + floor (2.5 * cos v)) `mod` width
-        y_ = (y + floor (2.5 * sin v)) `mod` height
-        v :: Exp Float
+        x    =  fst (fst agent)
+        y    =  snd (fst agent)
+        v    =  snd agent
+        tmpX = x + round (2.0 * cos v)
+        tmpY = y + round (2.0 * sin v)
+
+        dt' :: Exp Int
+        dt'       = round (dt*10000)
+        tmprnd    = dt' `xor` 2747636419 * 2654435769 
+        tmprnd2   = tmprnd  `xor`  (shift tmprnd 16 ) * 2654435769
+        tmprnd3   = tmprnd2 `xor`  (shift tmprnd2 16 ) * 2654435769
+        rnd       = 1--fromIntegral (tmprnd3 `div` 4294967295)
+
+        condition1 = (tmpX >= width)  || (tmpX < 0)
+        condition2 = (tmpY >= height) || (tmpY < 0)
+        v'    = ifThenElse (condition1 || condition2) (2 * pi * rnd) v
+        -- tmpX' = x + round (1.5 * cos v)
+        -- tmpY' = y + round (1.5 * sin v)
+
+        x_   = ifThenElse condition1 (min (width-1)  (max 0 tmpX))   tmpX
+        y_   = ifThenElse condition2 (min (height-1) (max 0 tmpY))   tmpY
+        -- x_ = (x + round (1.5 * cos v)) `mod` width
+        -- y_ = (y + round (1.5 * sin v)) `mod` height
+        v      :: Exp Float
         x_, y_ :: Exp Int
 
 initTrailMap :: (Int, Int) -> Acc (Array DIM2 Float)
@@ -87,8 +106,8 @@ updateAngles (width, height) agents trailMap = map f agents
         v = snd agent
 
         diffX, diffY :: Exp Int -> Exp Float -> Exp Int
-        diffX x v = (x + floor (dist * cos v)) `mod` width
-        diffY y v = (y + floor (dist * sin v)) `mod` height
+        diffX x v = (x + round (dist * cos v)) `mod` width
+        diffY y v = (y + round (dist * sin v)) `mod` height
 --        t0, t1, t2 :: Exp(Float)
         t0 = trailMap ! index2 (diffX x v)  (diffY y v)
         t1 = trailMap ! index2 (diffX x (v - rotation)) (diffY y (v - rotation))
