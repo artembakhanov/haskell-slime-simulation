@@ -2,8 +2,14 @@ module Constant where
 
 import Data.Array.Accelerate                              as A
 import qualified Prelude                                  as P
-import Data.Array.Accelerate.System.Random.MWC
+import Data.Array.Accelerate.System.Random.MWC ()
 
+data State = State {getFps       :: Int,
+                    getWidth     :: Int,
+                    getHeight    :: Int,
+                    getAgentsNum :: Int
+                  }
+                  
 -- gaussian = [constant (0.06136),constant 0.24477, constant 0.38774, constant 0.24477, constant 0.06136]
 gaussian :: [Exp Float]
 gaussian = [constant 0.7, constant 0.8, constant 0.9, constant 0.8, constant 0.7]
@@ -18,11 +24,13 @@ speed = 10
 diffuseRate = 3.0
 
 width_, height_, fps, agentsNum :: Int
-width_     = 800
-height_    = 600
+width_     = 200
+height_    = 200
 agentsNum  = 200000
 fps        = 25
 
 width, height :: Exp Int
 width    = constant width_
 height   = constant height_
+
+initState = State fps width_ height_ agentsNum
