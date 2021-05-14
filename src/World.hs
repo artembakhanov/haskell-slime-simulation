@@ -37,9 +37,9 @@ chelikToColor _dt el =
 -- initWorld :: Int -> World
 
 
-renderWorld :: Acc World -> A.Matrix A.Word32
+renderWorld :: Acc World -> Acc (A.Matrix A.Word32)
 renderWorld (World agents trail t) =
-  run $ A.map A.packRGB $ A.map (chelikToColor (the t)) $ fromAgentsToMatrix agents
+  A.map A.packRGB $ A.map (chelikToColor (the t)) $ fromAgentsToMatrix agents
 
 updateWorld :: Float -> A.Acc World -> A.Acc World
 updateWorld dt world = (World rotatedCheliki newTrailMap (unit time))

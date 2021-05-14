@@ -31,6 +31,9 @@ dependencies:
 # - cuda
 # - accelerate-llvm-ptx
 
+ghc-options:
+  -Wall
+
 library:
   source-dirs: src
 

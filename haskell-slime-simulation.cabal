@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 158688b03a81fc70ebcd4c58541bf82d2211f6655e08837e85add1b2f559f96f
+-- hash: c094a2a2d04b68b930ac1aedf4a078bdcd23b860685f1139244827c8999f50f0
 
 name:           haskell-slime-simulation
 version:        0.1.0.0
@@ -35,6 +35,7 @@ library
       Paths_haskell_slime_simulation
   hs-source-dirs:
       src
+  ghc-options: -Wall
   build-depends:
       accelerate
     , accelerate-io-bmp
@@ -51,7 +52,7 @@ executable haskell-slime-simulation-exe
       Paths_haskell_slime_simulation
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       accelerate
     , accelerate-io-bmp
@@ -71,7 +72,7 @@ test-suite haskell-slime-simulation-test
       Paths_haskell_slime_simulation
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       accelerate
     , accelerate-io-bmp
