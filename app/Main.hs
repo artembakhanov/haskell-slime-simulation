@@ -28,14 +28,14 @@ main = do
   let
     render :: World -> Picture
     render world = scale 1 1 (bitmapOfArray (run1 (renderWorld) world) False) -- draw agent
-    update dt world = updateWorld dt world                      -- update world
+    update dt = run1 (updateWorld dt)                      -- update world
   -- * Initialize agents by random values
   agents <- initAgents agentsNum
-  initWorld <- evaluate (World_ agents initTrailMap (CPU.run $ A.unit 0.0)) 
+  initWorld <- evaluate (World_ agents initTrailMap (run $ A.unit 0.0)) 
   GL.simulate
       (GL.InWindow "Cheliki" (width_, height_) (10, 20))
       black                                               -- background
       fps                                                 --
       initWorld           -- initial world
       render                                              -- draw world
-      (\_ -> run1 . update)                              -- update world
+      (\_ -> update)                              -- update world
