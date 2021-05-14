@@ -7,6 +7,7 @@ import qualified Prelude                                  as P
 import Data.Array.Accelerate.System.Random.MWC
 import Constant                                           as C
 import Data.Array.Accelerate.LLVM.Native                  as CPU
+import Lib
 
 data Agent = Agent_ {getIdx :: Int, 
                      getX   :: Int,
@@ -63,10 +64,18 @@ moveAgents time agents = map f agents
         x_ = (x + round (2.5 * cos a)) `mod` width
         y_ = (y + round (2.5 * sin a)) `mod` height
 
+randomBool :: Exp Float -> Exp Agent -> Exp Bool
+randomBool time (Agent idx x y a) = (random time idx x y a) `mod` 2 == 0
+
+random01 :: Exp Float -> Exp Agent -> Exp Float
+random01 time (Agent idx x y a) = fromIntegral r / 4294967295.0
+    where
+        r = random time idx x y a
+
 updateAngles :: Exp Float -> Exp Float -> Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
 updateAngles dt time trailMap agents = map f agents
   where
-    f (Agent idx x y a) = Agent idx x y a_
+    f agent@(Agent idx x y a) = Agent idx x y a_
       where
         a_ :: Exp Float
 
@@ -77,7 +86,14 @@ updateAngles dt time trailMap agents = map f agents
         t0 = trailMap ! index2 (diffX x a)  (diffY y a)
         t1 = trailMap ! index2 (diffX x (a - rotation)) (diffY y (a - rotation))
         t2 = trailMap ! index2 (diffX x (a + rotation)) (diffY y (a + rotation))
-        a_ = ifThenElse (t0 < t1) (ifThenElse (t1 < t2) (a + rotation) (a - rotation)) (ifThenElse (t0 > t2) (a) (a + rotation))
+        randAngle = random01 time agent
+        a_ = ifThenElse (t0 > t1 && t0 > t2) 
+                (a)
+                (ifThenElse (t0 < t1 && t0 < t2)
+                    (a + (randAngle - 0.5) * 2 * turnSpeed * dt)
+                    (ifThenElse (t1 < t2)
+                        (a - randAngle * turnSpeed * dt)
+                        (a + randAngle * turnSpeed * dt)))
 
 initTrailMap :: Array DIM2 Float
 initTrailMap = run $ fill (constant (Z:.width_:.height_)) 0.0
