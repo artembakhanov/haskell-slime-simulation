@@ -18,7 +18,7 @@ a5 = 2707
 random :: Exp Float -> Exp Int -> Exp Int -> Exp Int -> Exp Float -> Exp Word32
 random time idx x y a = state3
     where
-        state = fromIntegral ((floor time * a1) + idx * a2 + x * a3 + y * a4 + floor (a * 2707))
+        state = fromIntegral ((round time * a1) + idx * a2 + x * a3 + y * a4 + round (a * 2707))
 
         state1 = (state              `xor` 2747636419)   * 2654435769
         state2 = ((shift state1 16)  `xor` state1)        * 2654435769

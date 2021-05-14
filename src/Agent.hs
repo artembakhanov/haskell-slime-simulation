@@ -60,8 +60,8 @@ moveAgents time agents = map f agents
     f (Agent idx x y a) = Agent idx x_ y_ a
       where
         x_, y_ :: Exp Int
-        x_ = (x + floor (2.5 * cos a)) `mod` width
-        y_ = (y + floor (2.5 * sin a)) `mod` height
+        x_ = (x + round (2.5 * cos a)) `mod` width
+        y_ = (y + round (2.5 * sin a)) `mod` height
 
 updateAngles :: Exp Float -> Exp Float -> Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
 updateAngles dt time trailMap agents = map f agents
@@ -71,8 +71,8 @@ updateAngles dt time trailMap agents = map f agents
         a_ :: Exp Float
 
         diffX, diffY :: Exp Int -> Exp Float -> Exp Int
-        diffX x a = (x + floor (dist * cos a)) `mod` width
-        diffY y a = (y + floor (dist * sin a)) `mod` height
+        diffX x a = (x + round (dist * cos a)) `mod` width
+        diffY y a = (y + round (dist * sin a)) `mod` height
 
         t0 = trailMap ! index2 (diffX x a)  (diffY y a)
         t1 = trailMap ! index2 (diffX x (a - rotation)) (diffY y (a - rotation))
