@@ -8,6 +8,7 @@
 module Main where
 
 import Constant
+import Control.Exception (evaluate)
 import Agent
 import World
 import Prelude ((==))
@@ -25,14 +26,16 @@ import Graphics.Gloss.Accelerate.Data.Picture (bitmapOfArray)
 main :: IO ()
 main = do
   let
-    render world = scale 1 1 (bitmapOfArray (renderWorld world) False) -- draw agent
-    update dt world = A.use (run (updateWorld dt world))               -- update world
+    render :: World -> Picture
+    render world = scale 1 1 (bitmapOfArray (run1 (renderWorld) world) False) -- draw agent
+    update dt world = updateWorld dt world                      -- update world
   -- * Initialize agents by random values
   agents <- initAgents agentsNum
+  initWorld <- evaluate (World_ agents initTrailMap (CPU.run $ A.unit 0.0)) 
   GL.simulate
       (GL.InWindow "Cheliki" (width_, height_) (10, 20))
       black                                               -- background
       fps                                                 --
-      (World agents initTrailMap (A.unit 0.0))            -- initial world
+      initWorld           -- initial world
       render                                              -- draw world
-      (\_ -> update)                              -- update world
+      (\_ -> run1 . update)                              -- update world

@@ -6,8 +6,12 @@ import Data.Array.Accelerate                              as A
 import qualified Prelude                                  as P
 import Data.Array.Accelerate.System.Random.MWC
 import Constant                                           as C
+import Data.Array.Accelerate.LLVM.Native                  as CPU
 
-data Agent = Agent_ Int Int Int Float
+data Agent = Agent_ {getIdx :: Int, 
+                     getX   :: Int,
+                     getY   :: Int,
+                     getA   :: Float}
     deriving (Generic, Elt)
 
 pattern Agent :: Exp Int -> Exp Int -> Exp Int -> Exp Float -> Exp Agent
@@ -40,14 +44,14 @@ fromAgentsToMatrix agents =
         permute (+) zeros (\ix -> Just_ (fromAgentToShape (agents!ix))) ones
 
 
-initAgents :: Int -> P.IO(Acc(Vector Agent))
+initAgents :: Int -> P.IO(Vector Agent)
 initAgents n = do
     let
         idx = fromList (Z:.n) [0..] :: Vector Int
     x <- randomArray (uniformR (0, width_))   (Z :. n)           :: P.IO (Vector Int)
     y <- randomArray (uniformR (0, height_))  (Z :. n)           :: P.IO (Vector Int)
     a <- randomArray (uniformR (0, 2 * pi))    (Z :. n)          :: P.IO (Vector Float)
-    P.return (zipWith4 (\idx x y a -> Agent idx x y a) (use idx) (use x) (use y) (use a))
+    P.return $ run $ (zipWith4 (\idx x y a -> Agent idx x y a) (use idx) (use x) (use y) (use a))
 
 
 moveAgents :: Exp Float -> Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
@@ -75,8 +79,8 @@ updateAngles dt time trailMap agents = map f agents
         t2 = trailMap ! index2 (diffX x (a + rotation)) (diffY y (a + rotation))
         a_ = ifThenElse (t0 < t1) (ifThenElse (t1 < t2) (a + rotation) (a - rotation)) (ifThenElse (t0 > t2) (a) (a + rotation))
 
-initTrailMap :: Acc (Array DIM2 Float)
-initTrailMap = fill (constant (Z:.width_:.height_)) 0.0
+initTrailMap :: Array DIM2 Float
+initTrailMap = run $ fill (constant (Z:.width_:.height_)) 0.0
 
 updateTrailMap :: Exp Float -> Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent) -> Acc (Array DIM2 Float)
 updateTrailMap dt prev agents = newTrail

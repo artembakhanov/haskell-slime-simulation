@@ -19,8 +19,8 @@ speed = 2.5
 width_, height_, fps, agentsNum :: Int
 width_     =  800
 height_    = 600
-agentsNum  = 2000000
-fps        = 5
+agentsNum  = 200000
+fps        = 25
 
 width, height :: Exp Int
 width    = constant width_
