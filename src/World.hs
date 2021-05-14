@@ -27,12 +27,12 @@ pattern World {agents, trail, t } = A.Pattern (agents, trail, t)
 
 -- | Draw pixel according to number of agents in this pixel and time that world exists
 chelikToColor :: A.Exp Float -> A.Exp Float -> A.Exp A.Colour
-chelikToColor _dt el =
+chelikToColor t el =
   A.rgb r g b
     where
-      r = el / 20.0 * 49.0 / 255.0
-      g = el / 20.0 * 188.0 / 255.0
-      b = el / 20.0 * 239.0 / 255.0
+      r = ((el / 5.0) * (49.0 * t * (sin (t / 17) + 1)))  / 255.0
+      g = ((el / 5.0) * (188.0 * t * (cos (t / 17) + 1))) / 255.0
+      b = ((el / 5.0) * (239.0 * t * (sin (t / 17) + cos (t / 17) + 1))) / 255.0
 
 -- initWorld :: Int -> World
 
