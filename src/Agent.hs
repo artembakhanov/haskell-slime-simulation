@@ -7,8 +7,9 @@ import qualified Prelude                                  as P
 import Data.Array.Accelerate.System.Random.MWC
 import Constant                                           as C
 import Data.Array.Accelerate.LLVM.Native                  as CPU
+import Lib
 
-data Agent = Agent_ {getIdx :: Int, 
+data Agent = Agent_ {getIdx :: Int,
                      getX   :: Int,
                      getY   :: Int,
                      getA   :: Float}
@@ -35,6 +36,8 @@ blur = stencil (convolve5x1 gaussian) clamp
 fromAgentToShape :: Exp Agent -> Exp ((:.) ((:.) Z Int) Int)
 fromAgentToShape (Agent idx x y v) = I2 x y
 
+-- | Create matrix from list of agent
+-- * each element of matrix is the number of agents in this element
 fromAgentsToMatrix :: Acc (Array DIM1 Agent) -> Acc (Matrix Float)
 fromAgentsToMatrix agents =
     let
@@ -43,7 +46,7 @@ fromAgentsToMatrix agents =
     in
         permute (+) zeros (\ix -> Just_ (fromAgentToShape (agents!ix))) ones
 
-
+-- | Initialize agents with random values
 initAgents :: Int -> P.IO(Vector Agent)
 initAgents n = do
     let
@@ -53,16 +56,17 @@ initAgents n = do
     a <- randomArray (uniformR (0, 2 * pi))    (Z :. n)          :: P.IO (Vector Float)
     P.return $ run $ (zipWith4 (\idx x y a -> Agent idx x y a) (use idx) (use x) (use y) (use a))
 
-
+-- | Update coordinates of agents: move agents with by speed in some direction
 moveAgents :: Exp Float -> Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
 moveAgents time agents = map f agents
   where
     f (Agent idx x y a) = Agent idx x_ y_ a
       where
         x_, y_ :: Exp Int
-        x_ = (x + round (2.5 * cos a)) `mod` width
-        y_ = (y + round (2.5 * sin a)) `mod` height
+        x_ = (x + round (speed * cos a)) `mod` width
+        y_ = (y + round (speed * sin a)) `mod` height
 
+-- | Update directions of agents, agents go where they smell other agents most
 updateAngles :: Exp Float -> Exp Float -> Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
 updateAngles dt time trailMap agents = map f agents
   where
@@ -79,13 +83,19 @@ updateAngles dt time trailMap agents = map f agents
         t2 = trailMap ! index2 (diffX x (a + rotation)) (diffY y (a + rotation))
         a_ = ifThenElse (t0 < t1) (ifThenElse (t1 < t2) (a + rotation) (a - rotation)) (ifThenElse (t0 > t2) (a) (a + rotation))
 
+-- | Initialize trail map by 0 values
 initTrailMap :: Array DIM2 Float
 initTrailMap = run $ fill (constant (Z:.width_:.height_)) 0.0
 
+-- | Updates trail map: blur + add new agents
 updateTrailMap :: Exp Float -> Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent) -> Acc (Array DIM2 Float)
 updateTrailMap dt prev agents = newTrail
     where
-        ones = fill (I1 (size agents)) trailWeight
-        prev_ = map ((decayRate * dt) *) prev
-        blurred_prev = blur prev_
-        newTrail = permute (+) blurred_prev (\ix -> Just_ (fromAgentToShape (agents!ix))) ones
+        diffuseWeight = saturate diffuseRate * dt
+        -- blur with diffuseWeight coefficient
+        blurredTrail = map (\x -> diffuseWeight * x) (blur prev)
+        prevWeighted = map (\x -> (1 - diffuseWeight) * x) prev
+        sumTrail = permute (+) blurredTrail (\(I2 ix iy) -> Just_ (I2 ix iy)) prevWeighted
+        -- add new agents to trail map
+        ones = fill (I1 (size agents)) (trailWeight * dt)
+        newTrail = permute (\x y -> min 1 (x + y)) sumTrail (\ix -> Just_ (fromAgentToShape (agents!ix))) ones

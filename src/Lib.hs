@@ -1,11 +1,10 @@
 module Lib
-  ( random
+  ( random, saturate
   ) where
 
 import Data.Array.Accelerate                                        as A
 import Data.Array.Accelerate.Data.Bits                              as B
 import qualified Prelude                                            as P
-import Agent
 
 
 a1, a2, a3, a4, a5 :: Exp Int
@@ -25,6 +24,6 @@ random time idx x y a = state3
         state3 = ((shift state2 16)  `xor` state2)        * 2654435769
 
 
-randomBool :: Exp Float -> Exp Agent -> Exp Bool
-randomBool time (Agent idx x y a) = (random time idx x y a) `mod` 2 == 0
-  
+
+saturate :: Exp Float -> Exp Float
+saturate x = 1 `min` (0 `max` x)
