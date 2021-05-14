@@ -5,7 +5,7 @@ module Agent where
 import Data.Array.Accelerate                              as A
 import qualified Prelude                                  as P
 import Data.Array.Accelerate.System.Random.MWC
-import Constant
+import Constant                                           as C
 
 data Agent = Agent_ Int Int Int Float
     deriving (Generic, Elt)
@@ -31,27 +31,27 @@ blur = stencil (convolve5x1 gaussian) clamp
 fromAgentToShape :: Exp Agent -> Exp ((:.) ((:.) Z Int) Int)
 fromAgentToShape (Agent idx x y v) = I2 x y
 
-fromAgentsToMatrix :: (Int, Int) -> Acc (Array DIM1 Agent) -> Acc (Matrix Float)
-fromAgentsToMatrix (width, height) agents =
+fromAgentsToMatrix :: Acc (Array DIM1 Agent) -> Acc (Matrix Float)
+fromAgentsToMatrix agents =
     let
-        zeros = fill (constant (Z:.width:.height)) 0
+        zeros = fill (constant (Z:.width_:.height_)) 0
         ones  = fill (I1 (size agents))            1
     in
         permute (+) zeros (\ix -> Just_ (fromAgentToShape (agents!ix))) ones
 
 
-initAgents :: Int -> (Int, Int) -> P.IO(Acc (Vector Agent))
-initAgents n (width, height) = do
+initAgents :: Int -> P.IO(Acc(Vector Agent))
+initAgents n = do
     let
         idx = fromList (Z:.n) [0..] :: Vector Int
-    x <- randomArray (uniformR (0, width))   (Z :. n)           :: P.IO (Vector Int)
-    y <- randomArray (uniformR (0, height))  (Z :. n)           :: P.IO (Vector Int)
-    a <- randomArray (uniformR (0, 2 * pi))    (Z :. n)         :: P.IO (Vector Float)
+    x <- randomArray (uniformR (0, width_))   (Z :. n)           :: P.IO (Vector Int)
+    y <- randomArray (uniformR (0, height_))  (Z :. n)           :: P.IO (Vector Int)
+    a <- randomArray (uniformR (0, 2 * pi))    (Z :. n)          :: P.IO (Vector Float)
     P.return (zipWith4 (\idx x y a -> Agent idx x y a) (use idx) (use x) (use y) (use a))
 
 
-moveAgents :: (Exp Int, Exp Int) -> Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
-moveAgents (width, height) = map f
+moveAgents :: Exp Float -> Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
+moveAgents time agents = map f agents
   where
     f (Agent idx x y a) = Agent idx x_ y_ a
       where
@@ -59,19 +59,8 @@ moveAgents (width, height) = map f
         x_ = (x + floor (2.5 * cos a)) `mod` width
         y_ = (y + floor (2.5 * sin a)) `mod` height
 
-initTrailMap :: (Int, Int) -> Acc (Array DIM2 Float)
-initTrailMap (width, height) = fill (constant (Z:.width:.height)) 0.0
-
-updateTrailMap :: Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent) -> Acc (Array DIM2 Float)
-updateTrailMap prev agents = new
-    where
-        ones = fill (I1 (size agents)) trailWeight
-        prev_ = map ((decayRate * dt) *) prev
-        blurred_prev = blur prev_
-        new = permute (+) blurred_prev (\ix -> Just_ (fromAgentToShape (agents!ix))) ones
-
-updateAngles :: (Exp Int, Exp Int) -> Acc (Array DIM1 Agent) -> Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent)
-updateAngles (width, height) agents trailMap = map f agents
+updateAngles :: Exp Float -> Exp Float -> Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
+updateAngles dt time trailMap agents = map f agents
   where
     f (Agent idx x y a) = Agent idx x y a_
       where
@@ -85,3 +74,14 @@ updateAngles (width, height) agents trailMap = map f agents
         t1 = trailMap ! index2 (diffX x (a - rotation)) (diffY y (a - rotation))
         t2 = trailMap ! index2 (diffX x (a + rotation)) (diffY y (a + rotation))
         a_ = ifThenElse (t0 < t1) (ifThenElse (t1 < t2) (a + rotation) (a - rotation)) (ifThenElse (t0 > t2) (a) (a + rotation))
+
+initTrailMap :: Acc (Array DIM2 Float)
+initTrailMap = fill (constant (Z:.width_:.height_)) 0.0
+
+updateTrailMap :: Exp Float -> Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent) -> Acc (Array DIM2 Float)
+updateTrailMap dt prev agents = newTrail
+    where
+        ones = fill (I1 (size agents)) trailWeight
+        prev_ = map ((decayRate * dt) *) prev
+        blurred_prev = blur prev_
+        newTrail = permute (+) blurred_prev (\ix -> Just_ (fromAgentToShape (agents!ix))) ones

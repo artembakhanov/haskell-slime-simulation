@@ -9,14 +9,19 @@ gaussian :: [Exp Float]
 gaussian = [constant 0.7, constant 0.8, constant 0.9, constant 0.8, constant 0.7]
 
 -- trail coefficient
-trailWeight, decayRate, dist, rotation, dt :: Exp Float
+trailWeight, decayRate, dist, rotation, speed :: Exp Float
 trailWeight = 0.3
 decayRate = 0.25
-dt = 0.03
 dist = 4.0
 rotation = pi / 6
+speed = 2.5
 
-width, height, fps :: Int
-width    = 800
-height   = 600
-fps      = 5
+width_, height_, fps, agentsNum :: Int
+width_     =  800
+height_    = 600
+agentsNum  = 2000000
+fps        = 5
+
+width, height :: Exp Int
+width    = constant width_
+height   = constant height_

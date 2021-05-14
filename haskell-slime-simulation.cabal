@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e777358857ce7ab5832d8b7b99efe04e4829e73c40f030cdc0a63b8886b0e50d
+-- hash: 158688b03a81fc70ebcd4c58541bf82d2211f6655e08837e85add1b2f559f96f
 
 name:           haskell-slime-simulation
 version:        0.1.0.0
@@ -28,7 +28,9 @@ source-repository head
 library
   exposed-modules:
       Agent
+      Constant
       Lib
+      World
   other-modules:
       Paths_haskell_slime_simulation
   hs-source-dirs:
