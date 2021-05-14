@@ -1,5 +1,5 @@
 module Lib
-  ( random
+  ( random, saturate
   ) where
 
 import Data.Array.Accelerate                                        as A
@@ -23,5 +23,5 @@ random time idx x y a = state3
         state3 = ((shift state2 16)  `xor` state2)        * 2654435769
 
 
-
-  
+saturate :: Exp Float -> Exp Float
+saturate x = 1 `min` (0 `max` x)
