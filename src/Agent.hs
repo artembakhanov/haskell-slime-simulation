@@ -1,4 +1,5 @@
 {-# LANGUAGE PatternSynonyms, GADTs, ViewPatterns, DeriveAnyClass, DeriveGeneric #-}
+{-# LANGUAGE CPP                 #-}
 
 module Agent where
 
@@ -6,7 +7,12 @@ import Data.Array.Accelerate                              as A
 import qualified Prelude                                  as P
 import Data.Array.Accelerate.System.Random.MWC
 import Constant                                           as C
-import Data.Array.Accelerate.LLVM.Native                  as CPU
+#ifdef ACCELERATE_LLVM_NATIVE_BACKEND
+import Data.Array.Accelerate.LLVM.Native                            as CPU
+#endif
+#ifdef ACCELERATE_LLVM_PTX_BACKEND
+import Data.Array.Accelerate.LLVM.PTX                               as PTX
+#endif
 import Lib
 
 data Agent = Agent_ {getIdx :: Int,
@@ -91,11 +97,12 @@ initTrailMap = run $ fill (constant (Z:.width_:.height_)) 0.0
 updateTrailMap :: Exp Float -> Acc (Array DIM2 Float) -> Acc (Array DIM1 Agent) -> Acc (Array DIM2 Float)
 updateTrailMap dt prev agents = newTrail
     where
-        diffuseWeight = saturate diffuseRate * dt
+        diffuseWeight = saturate (diffuseRate * dt)
         -- blur with diffuseWeight coefficient
         blurredTrail = map (\x -> diffuseWeight * x) (blur prev)
         prevWeighted = map (\x -> (1 - diffuseWeight) * x) prev
-        sumTrail = permute (+) blurredTrail (\(I2 ix iy) -> Just_ (I2 ix iy)) prevWeighted
+        blurredCol = permute (+) blurredTrail (\(I2 ix iy) -> Just_ (I2 ix iy)) prevWeighted
+        diffusedTrail = map (\x -> max 0 (x - decayRate * dt)) blurredCol
         -- add new agents to trail map
         ones = fill (I1 (size agents)) (trailWeight * dt)
-        newTrail = permute (\x y -> min 1 (x + y)) sumTrail (\ix -> Just_ (fromAgentToShape (agents!ix))) ones
+        newTrail = permute (\x y -> min 1 (x + y)) diffusedTrail (\ix -> Just_ (fromAgentToShape (agents!ix))) ones

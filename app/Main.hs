@@ -3,6 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
 {-# LANGUAGE ViewPatterns        #-}
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE PatternSynonyms, GADTs, ViewPatterns, DeriveAnyClass, DeriveGeneric #-}
 
 module Main where
@@ -13,7 +14,14 @@ import Agent
 import World
 import Prelude ((==))
 import Prelude                                                      as P
+
+#ifdef ACCELERATE_LLVM_NATIVE_BACKEND
 import Data.Array.Accelerate.LLVM.Native                            as CPU
+#endif
+#ifdef ACCELERATE_LLVM_PTX_BACKEND
+import Data.Array.Accelerate.LLVM.PTX                               as PTX
+#endif
+
 import qualified Data.Array.Accelerate                              as A
 import qualified Data.Array.Accelerate.IO.Codec.BMP                 as A
 import qualified Data.Array.Accelerate.Data.Colour.RGB              as A
@@ -31,9 +39,9 @@ main = do
     update dt world = updateWorld dt world                      -- update world
   -- * Initialize agents by random values
   agents <- initAgents agentsNum
-  initWorld <- evaluate (World_ agents initTrailMap (CPU.run $ A.unit 0.0)) 
+  initWorld <- evaluate (World_ agents initTrailMap (run $ A.unit 0.0)) 
   GL.simulate
-      (GL.InWindow "Cheliki" (width_, height_) (10, 20))
+      (GL.FullScreen)
       black                                               -- background
       fps                                                 --
       initWorld           -- initial world

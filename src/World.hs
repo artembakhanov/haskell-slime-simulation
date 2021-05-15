@@ -13,7 +13,7 @@ import Constant
 import Agent
 import Data.Array.Accelerate                                        as A
 import Data.Array.Accelerate.IO.Codec.BMP                           as A
-import Data.Array.Accelerate.LLVM.Native                            as CPU
+-- import Data.Array.Accelerate.LLVM.Native                            as CPU
 import qualified Data.Array.Accelerate.Data.Colour.RGB              as A
 import qualified Data.Array.Accelerate.Data.Colour.Names            as A
 import qualified Prelude                                            as P

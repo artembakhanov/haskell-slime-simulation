@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 158688b03a81fc70ebcd4c58541bf82d2211f6655e08837e85add1b2f559f96f
+-- hash: 3cf53d3fac4217350901b7989497991e9c5ffa255bd45d36cdf388642cdb31b3
 
 name:           haskell-slime-simulation
 version:        0.1.0.0
@@ -25,6 +25,11 @@ source-repository head
   type: git
   location: https://github.com/artembakhanov/haskell-slime-simulation
 
+flag enable-gpu
+  description: On gpu or not
+  manual: True
+  default: False
+
 library
   exposed-modules:
       Agent
@@ -39,10 +44,16 @@ library
       accelerate
     , accelerate-io-bmp
     , accelerate-llvm-native
+    , accelerate-llvm-ptx
     , base >=4.7 && <5
     , colour-accelerate
+    , cuda
     , gloss-accelerate
     , mwc-random-accelerate
+  if flag(enable-gpu)
+    cpp-options: -DACCELERATE_LLVM_PTX_BACKEND
+  else
+    cpp-options: -DACCELERATE_LLVM_NATIVE_BACKEND
   default-language: Haskell2010
 
 executable haskell-slime-simulation-exe
@@ -56,12 +67,18 @@ executable haskell-slime-simulation-exe
       accelerate
     , accelerate-io-bmp
     , accelerate-llvm-native
+    , accelerate-llvm-ptx
     , base >=4.7 && <5
     , colour-accelerate
+    , cuda
     , gloss
     , gloss-accelerate
     , haskell-slime-simulation
     , mwc-random-accelerate
+  if flag(enable-gpu)
+    cpp-options: -DACCELERATE_LLVM_PTX_BACKEND
+  else
+    cpp-options: -DACCELERATE_LLVM_NATIVE_BACKEND
   default-language: Haskell2010
 
 test-suite haskell-slime-simulation-test
@@ -76,8 +93,10 @@ test-suite haskell-slime-simulation-test
       accelerate
     , accelerate-io-bmp
     , accelerate-llvm-native
+    , accelerate-llvm-ptx
     , base >=4.7 && <5
     , colour-accelerate
+    , cuda
     , gloss-accelerate
     , haskell-slime-simulation
     , mwc-random-accelerate
