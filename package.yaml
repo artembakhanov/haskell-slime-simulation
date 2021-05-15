@@ -28,11 +28,28 @@ dependencies:
 - accelerate-llvm-native
 - mwc-random-accelerate
 - gloss-accelerate
-# - cuda
-# - accelerate-llvm-ptx
+- cuda
+- accelerate-llvm-ptx
+
+
+flags:
+  enable-gpu:
+    default: false
+    manual:  true 
+    description: On gpu or not
+
+
+
+
 
 library:
   source-dirs: src
+  when:
+    - condition: flag(enable-gpu)
+      then:
+        cpp-options: -DACCELERATE_LLVM_PTX_BACKEND
+      else:
+        cpp-options: -DACCELERATE_LLVM_NATIVE_BACKEND
 
 executables:
   haskell-slime-simulation-exe:
@@ -45,6 +62,13 @@ executables:
     dependencies:
     - gloss
     - haskell-slime-simulation
+
+    when:
+    - condition: flag(enable-gpu)
+      then:
+        cpp-options: -DACCELERATE_LLVM_PTX_BACKEND
+      else:
+        cpp-options: -DACCELERATE_LLVM_NATIVE_BACKEND
 
 tests:
   haskell-slime-simulation-test:

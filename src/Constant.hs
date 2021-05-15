@@ -21,10 +21,10 @@ speed = 10
 diffuseRate = 3.0
 
 width_, height_, fps, agentsNum :: Int
-width_     = 800
-height_    = 600
-agentsNum  = 200000
-fps        = 25
+width_     = 1080
+height_    = 1920
+agentsNum  = 250000
+fps        = 30
 
 width, height :: Exp Int
 width    = constant width_
