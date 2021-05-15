@@ -58,13 +58,13 @@ initAgents n = do
 
 -- | Update coordinates of agents: move agents with by speed in some direction
 moveAgents :: Exp Float -> Acc (Array DIM1 Agent) -> Acc (Array DIM1 Agent)
-moveAgents time agents = map f agents
+moveAgents dt agents = map f agents
   where
     f (Agent idx x y a) = Agent idx x_ y_ a
       where
         x_, y_ :: Exp Int
-        x_ = (x + round (speed * cos a)) `mod` width
-        y_ = (y + round (speed * sin a)) `mod` height
+        x_ = (x + round (speed * dt * cos a)) `mod` width
+        y_ = (y + round (speed * dt * sin a)) `mod` height
 
 randomBool :: Exp Float -> Exp Agent -> Exp Bool
 randomBool time (Agent idx x y a) = (random time idx x y a) `mod` 2 == 0
@@ -90,13 +90,14 @@ updateAngles dt time trailMap agents = map f agents
         t1 = trailMap ! index2 (diffX x (a - rotation)) (diffY y (a - rotation))
         t2 = trailMap ! index2 (diffX x (a + rotation)) (diffY y (a + rotation))
         randAngle = random01 time agent
+        -- a_ = ifThenElse (t0 < t1) (ifThenElse (t1 < t2) (a + rotation) (a - rotation)) (ifThenElse (t0 > t2) (a) (a + rotation))
         a_ = ifThenElse (t0 > t1 && t0 > t2) 
                 (a)
                 (ifThenElse (t0 < t1 && t0 < t2)
                     (a + (randAngle - 0.5) * 2 * turnSpeed * dt)
-                    (ifThenElse (t1 < t2)
-                        (a - randAngle * turnSpeed * dt)
-                        (a + randAngle * turnSpeed * dt)))
+                    (ifThenElse (t1 > t2)
+                        (a - rotation)
+                        (a + rotation)))
 
 -- | Initialize trail map by 0 values
 initTrailMap :: Array DIM2 Float
